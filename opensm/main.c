@@ -748,8 +748,17 @@ int main(int argc, char *argv[])
 
 	osm_subn_set_default_opt(&opt);
 
+	/*
+		kyyang: all attrs are cleared, including SL-VL Mapping table and  VL Arbitration Table.
+	 */
+
 	if (osm_subn_parse_conf_file(config_file, &opt) < 0)
 		printf("\nFail to parse config file \'%s\'\n", config_file);
+	
+	/*
+		kyyang: all attrs are parsed from OSM_DEFAULT_CONFIG_FILE "/etc/opensm/opensm.conf".
+		SL-VL Mapping table and VL Arbitration can also be set in above config.
+	 */
 
 	printf("Command Line Arguments:\n");
 	do {
@@ -1223,6 +1232,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	/*
+		kyyang: init logger, db and basic components
+	 */
+
 	status = osm_opensm_init(&osm, &opt);
 	if (status != IB_SUCCESS) {
 		const char *err_str = ib_get_err_str(status);
@@ -1245,6 +1258,9 @@ int main(int argc, char *argv[])
 	if (opt.guid == 0)
 		goto Exit2;
 
+	/*
+		kyyang: init MAD pool, VL15, sm, sa, congestion control, routing engine
+	 */
 	status = osm_opensm_init_finish(&osm, &opt);
 	if (status != IB_SUCCESS) {
 		const char *err_str = ib_get_err_str(status);
@@ -1254,6 +1270,9 @@ int main(int argc, char *argv[])
 		goto Exit2;
 	}
 
+	/*
+		kyyang: prepare to serve. Use MAD to bind SM and SA
+	 */
 	status = osm_opensm_bind(&osm, opt.guid);
 	if (status != IB_SUCCESS) {
 		printf("\nError from osm_opensm_bind (0x%X)\n", status);
@@ -1264,6 +1283,11 @@ int main(int argc, char *argv[])
 
 	setup_signals();
 
+	/*
+		kyyang: sending signal to activate a sweep.
+		sweep is done by osm_state_mgr.c: do_sweep.
+		osm_qos.c: osm_qos_setup will be invoked in sweep.
+	 */
 	osm_opensm_sweep(&osm);
 
 	if (run_once_flag == TRUE) {
@@ -1280,6 +1304,9 @@ int main(int argc, char *argv[])
 		/*
 		 *         Sit here until signaled to exit
 		 */
+		/*
+			kyyang: serving here, waiting signal from user and then taking corresponding actions
+	 	*/
 		osm_manager_loop(&opt, &osm);
 	}
 

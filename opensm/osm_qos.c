@@ -462,6 +462,9 @@ int osm_qos_setup(osm_opensm_t * p_osm)
 	qos_mad_item_t *p_port_mad;
 	cl_qlist_t qos_mad_list;
 
+	/*
+		kyyang: QoS option must be on if we want to use SL-VL mapping and arbitration.
+	 */
 	if (!p_osm->subn.opt.qos)
 		return 0;
 
@@ -501,6 +504,9 @@ int osm_qos_setup(osm_opensm_t * p_osm)
 
 		p_node = p_port->p_node;
 		if (p_node->sw) {
+			/*
+				kyyang: endnode is switch
+		 	*/
 			if (qos_extports_setup(&p_osm->sm, p_node, &swe_config,
 					       &p_list->port_mad_list)) {
 				cl_plock_release(&p_osm->lock);
@@ -524,6 +530,9 @@ int osm_qos_setup(osm_opensm_t * p_osm)
 		else
 			cfg = &ca_config;
 
+		/*
+			kyyang: main logic here
+		 */
 		if (qos_endport_setup(&p_osm->sm, p_port->p_physp, cfg,
 				      vlarb_only, &p_list->port_mad_list)) {
 			cl_plock_release(&p_osm->lock);
